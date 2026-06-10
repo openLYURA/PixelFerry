@@ -36,3 +36,7 @@ launch_sender_gui.py
 
 # Test outputs
 tests/output/
+
+# Debug files
+tests/debug_*.png
+tests/debug_*.txt
