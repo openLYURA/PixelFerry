@@ -1,0 +1,6 @@
+region: (-5642, 158, 1219, 859)
+x_min/y_min: -5760, 0
+virtual size: 7680x2172
+physical size: 7680x2172
+scale: 1.0000, 1.0000
+crop bounds: rel_left=118, rel_top=158, rel_right=1337, rel_bottom=1017

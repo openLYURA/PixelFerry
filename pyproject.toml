@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pixelferry"
+version = "0.1.0"
+description = "Visual data transfer through remote desktop screenshots"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.9"
+authors = [
+    {name = "openLYURA"}
+]
+keywords = ["data-transfer", "remote-desktop", "visual-channel", "screenshot"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Archiving",
+    "Topic :: Communications",
+]
+dependencies = [
+    "Pillow>=9.0",
+    "numpy>=1.21",
+    "opencv-python>=4.5",
+    "qrcode[pil]>=7.0",
+]
+
+[project.optional-dependencies]
+capture = [
+    "mss>=6.0",
+]
+qr = [
+    "pyzbar>=0.1.8",
+]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.scripts]
+pixelferry = "pixelferry.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/aoruLola/PixelFerry"
+Repository = "https://github.com/aoruLola/PixelFerry"
+
+[tool.setuptools.packages.find]
+include = ["pixelferry*"]
