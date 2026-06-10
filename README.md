@@ -2,6 +2,8 @@
 
 An RGB-based visual data channel for research on screen-coupled data transfer.
 
+English | [中文](README_zh.md)
+
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 ## What is PixelFerry?
