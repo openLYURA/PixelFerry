@@ -4,12 +4,10 @@
 
 <br/>
 
-<table><tr>
-<td><code>#FF0000</code></td>
-<td><code>#00FF00</code></td>
-<td><code>#0000FF</code></td>
-<td><code>#FFFF00</code></td>
-</tr></table>
+![#FF0000](https://img.shields.io/badge/----FF0000-red?style=flat&labelColor=FF0000)
+![#00FF00](https://img.shields.io/badge/----00FF00-green?style=flat&labelColor=00FF00)
+![#0000FF](https://img.shields.io/badge/----0000FF-blue?style=flat&labelColor=0000FF)
+![#FFFF00](https://img.shields.io/badge/----FFFF00-yellow?style=flat&labelColor=FFFF00)
 
 **Visual data transfer through RGB color blocks**
 
