@@ -1,139 +1,195 @@
-# PixelFerry
+<div align="center">
 
-An RGB-based visual data channel for research on screen-coupled data transfer.
+```
+ ██▓███ ▓█████ ██▒   █▓▓█████  ██▀███   ██▓ ██▓     ▒█████
+▓██░  ██▒▓█   ▀▓██░   █▒▓█   ▀ ▓██ ▒ ██▒▓██▒▓██▒    ▒██▒  ██▒
+▓██░ ██▓▒▒███   ▓██  █▒░▒███   ▓██ ░▄█ ▒▒██▒▒██░    ▒██░  ██▒
+▒██▄█▓▒ ▒▒▓█  ▄  ▒██ █░░▒▓█  ▄ ▒██▀▀█▄  ░██░▒██░    ▒██   ██░
+▒██▒ ░  ░░▒████▒  ▒▀█░  ░▒████▒░██▓ ▒██▒░██░░██████▒░ ████▓▒░
+▒▓▒░ ░  ░░░ ▒░ ░  ░ ▐░  ░░ ▒░ ░░ ▒▓ ░▒▓░░▓  ░ ▒░▓  ░░ ▒░▒░▒░
+```
+
+**Visual data transfer through RGB color blocks**
+
+`#FF0000` `#00FF00` `#0000FF` `#FFFF00`
 
 English | [中文](README_zh.md)
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.9+-yellow.svg)](https://python.org)
+
+</div>
+
+---
 
 ## What is PixelFerry?
 
-PixelFerry is a research tool that explores visual data transfer via RGB color blocks. It encodes binary data into colored blocks displayed in a window, which can be captured by screen recording or screenshot tools and decoded back to the original data.
+PixelFerry encodes binary data into RGB color blocks displayed on screen. A receiver captures the display, detects corner markers, applies perspective correction, and decodes the original data — all without network, clipboard, or shared storage.
 
-The core idea: each pixel block's R/G/B channel encodes 4 bits of data using 16 discrete color levels, achieving ~9 KB payload per frame at 1200x800 resolution.
+Each pixel block's R/G/B channel encodes **4 bits** using 16 discrete color levels:
+
+```
+ ┌──────────────────────────────────────────────────────┐
+ │  Level:   0    1    2    3  ···   12   13   14   15  │
+ │  Value:   8   24   40   56  ···  200  216  232  248  │
+ │                                                      │
+ │  3 nibbles/block × 12 bits = 1.5 bytes per block     │
+ │  1200×800 window → 46×29 grid → ~9 KB per frame      │
+ └──────────────────────────────────────────────────────┘
+```
 
 ## How It Works
 
 ```
-Sender                              Receiver
-┌─────────────────┐                ┌─────────────────┐
-│  input data     │                │  screen capture  │
-│       ↓         │                │       ↓          │
-│  build_package  │                │  decode_frame    │
-│       ↓         │                │       ↓          │
-│  split chunks   │                │  collect chunks  │
-│       ↓         │                │       ↓          │
-│  encode frames  │                │  merge + verify  │
-│       ↓         │   visual       │       ↓          │
-│  display window │ ──channel──→   │  unpack          │
-│  (loop playback)│  (screenshot)  │       ↓          │
-└─────────────────┘                │  output data     │
-                                   └─────────────────┘
+  SENDER                                 RECEIVER
+ ┌────────────────────┐                 ┌────────────────────┐
+ │  repo directory     │                 │  screen capture     │
+ │        │            │                 │        │            │
+ │  ┌─────▼─────┐      │                 │  ┌─────▼─────┐      │
+ │  │  package   │      │   ┌─────────┐  │  │  locate    │      │
+ │  │  (.pxf)    │      │   │ ░░▓▓░░  │  │  │  corners   │      │
+ │  └─────┬─────┘      │   │ ▓▓░░▓▓  │  │  └─────┬─────┘      │
+ │  ┌─────▼─────┐      │   │ ░░▓▓░░  │  │  ┌─────▼─────┐      │
+ │  │  split     │      │   │ ▓▓░░▓▓  │  │  │  decode    │      │
+ │  │  frames    │      │   │ ░░▓▓░░  │  │  │  blocks    │      │
+ │  └─────┬─────┘      │   └─────────┘  │  └─────┬─────┘      │
+ │  ┌─────▼─────┐      │    RGB blocks   │  ┌─────▼─────┐      │
+ │  │  display   │──────│──────────────→ │  │  verify    │      │
+ │  │  window    │ QR   │   screenshot   │  │  SHA-256   │      │
+ │  └───────────┘      │                 │  └─────┬─────┘      │
+ │                     │                 │  ┌─────▼─────┐      │
+ │                     │                 │  │  unpack    │      │
+ │                     │                 │  │  repo      │      │
+ └────────────────────┘                 └────────────────────┘
 ```
 
-1. **Sender** encodes data into RGB color blocks and displays them in a tkinter window
-2. **Receiver** captures the screen, detects corner markers, decodes blocks via perspective correction
-3. QR code protocol handles session initialization (frame count, checksum, data name)
+1. **Sender** packs a repo into `.pxf`, splits into chunks, encodes each as an RGB frame, displays in a tkinter window
+2. **Receiver** captures the screen, detects 4 corner markers (Y/R/G/B), applies perspective transform, decodes nibble-encoded blocks
+3. **QR code** carries session metadata (session ID, frame count, SHA-256, repo name) for zero-config pairing
 
-## Installation
+## Quick Start
 
 ```bash
+# Install
 pip install -e .
-```
 
-Or install dependencies manually:
+# Send a repo
+pixelferry send /path/to/repo
 
-```bash
-pip install Pillow numpy opencv-python qrcode[pil]
-```
-
-### Optional Dependencies
-
-```bash
-# Better QR code detection
-pip install pyzbar
-
-# Cross-platform screen capture
-pip install mss
-```
-
-## Usage
-
-### Send Data
-
-```bash
-pixelferry send /path/to/data
-
-# With custom frame rate
-pixelferry send /path/to/data --fps 3
-```
-
-### Receive Data
-
-```bash
+# Receive (on another machine, viewing the sender window)
 pixelferry receive
-
-# Specify output directory
-pixelferry receive /path/to/output
 ```
 
-### Configuration
+### With aliases
 
 ```bash
-# Add a path alias
-pixelferry config set myrepo /path/to/data
-
-# List configured paths
-pixelferry config
-
-# Remove an alias
-pixelferry config rm myrepo
+pixelferry config set myproject /home/user/myproject
+pixelferry send myproject --fps 5
 ```
 
-## Technical Details
+## Technical Reference
+
+<table>
+<tr>
+<td>
+
+**Frame Layout**
 
 | Parameter | Value |
 |---|---|
-| Window Size | 1200x800 px |
-| Block Size | 24x24 px |
-| Grid | 46 cols x 29 rows |
-| Color Levels | 16 per channel (values: 8, 24, ..., 248) |
-| Bits per Block | 12 (4 bits x 3 channels) |
-| Payload per Frame | ~9 KB |
-| Header | 128 bytes (magic, session, frame index, SHA-256 checksums) |
+| Window | 1200 × 800 px |
+| Block Size | 24 × 24 px |
+| Grid | 46 cols × 29 rows |
+| Header | 128 bytes |
+| Payload | ~9 KB / frame |
 
-### Color Encoding
+</td>
+<td>
 
-Each RGB channel uses 16 discrete levels with 16-unit spacing. The decoder snaps captured values to the nearest level with a tolerance of 7 units. This provides resilience against minor color shifts.
+**Color Encoding**
 
-```
-Level:  0    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15
-Value:  8   24   40   56   72   88  104  120  136  152  168  184  200  216  232  248
-```
+| Nibble | Channel Value |
+|---|---|
+| `0x0` | 8 |
+| `0x1` | 24 |
+| `0x2` | 40 |
+| `⋮` | `⋮` |
+| `0xE` | 232 |
+| `0xF` | 248 |
+
+</td>
+</tr>
+</table>
 
 ### Corner Markers
 
-Four colored markers in the corners enable perspective correction:
+Four colored markers in the corners enable automatic perspective correction:
 
-| Corner | Color | Purpose |
+```
+ ┌──────────────────────────────────────────┐
+ │ ■■■■■                                 ■■■│  Yellow → Red
+ │ ■■■■■                                 ■■■│
+ │                                          │
+ │                                          │
+ │ ■■■■■                                 ■■■│  Green → Blue
+ │ ■■■■■                                 ■■■│
+ └──────────────────────────────────────────┘
+```
+
+| Corner | Color | RGB |
 |---|---|---|
-| Top-left | Yellow (255,255,0) | Orientation anchor |
-| Top-right | Red (255,0,0) | Orientation |
-| Bottom-left | Green (0,255,0) | Orientation |
-| Bottom-right | Blue (0,0,255) | Orientation |
+| Top-left | Yellow | `(255, 255, 0)` |
+| Top-right | Red | `(255, 0, 0)` |
+| Bottom-left | Green | `(0, 255, 0)` |
+| Bottom-right | Blue | `(0, 0, 255)` |
+
+### Frame Header (128 bytes)
+
+```
+ 0                   4   5    7          23         31         35        67        99      128
+ ├───────────────────┬───┬────┬──────────┬──────────┬──────────┬─────────┬─────────┬───────┤
+ │  magic "PXF1"     │ver│hlen│ session_id (16B)    │frame_idx │total    │payload  │ SHA   │
+ │                   │   │    │          │          │          │_len     │_sha256  │ pkg   │
+ └───────────────────┴───┴────┴──────────┴──────────┴──────────┴─────────┴─────────┴───────┘
+```
 
 ## Security
 
-- Only reads user-specified directories
-- Excludes `.git`, `node_modules`, `.venv`, and other large directories by default
-- Prevents path traversal attacks (`..` and absolute paths rejected)
-- No network connections, no third-party services
+```
+ ✓  Reads only user-specified directories
+ ✓  Excludes .git, node_modules, .venv by default
+ ✓  Prevents path traversal (.. and absolute paths rejected)
+ ✓  SHA-256 per-frame and per-package integrity verification
+ ✗  No network connections
+ ✗  No third-party services
+ ✗  No clipboard access
+```
 
 ## Platform Support
 
-- **Windows**: Full support with screen capture
-- **macOS/Linux**: PNG-based pipeline (generate frames, transfer via other means, decode)
+| Platform | Mode | Notes |
+|---|---|---|
+| **Windows** | Live capture | Full support with screen capture via PrintWindow API |
+| **macOS / Linux** | PNG pipeline | Generate frames → transfer → decode |
+
+## Project Structure
+
+```
+pixelferry/
+├── codec.py           # RGB nibble encoding/decoding
+├── framing.py         # Frame header construction & validation
+├── manifest.py        # Repository manifest builder & parser
+├── package.py         # .pxf package build & unpack
+├── sender.py          # Frame generation & display window
+├── receiver.py        # Receive loop & frame collection
+├── corner_detect.py   # Corner marker detection & perspective transform
+├── qr_detect.py       # QR code detection & session init
+├── capture.py         # Screen capture & sender window location
+├── config.py          # Path alias configuration
+├── verify.py          # Reconstruction integrity verification
+└── utils.py           # Hashing, path safety, file detection
+```
 
 ## License
 
-Apache 2.0 - See [LICENSE](LICENSE) for details.
+[Apache 2.0](LICENSE)
