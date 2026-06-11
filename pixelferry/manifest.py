@@ -70,10 +70,14 @@ def parse_manifest_entries(package_bytes: bytes):
         if line.startswith("FILE_COUNT="):
             break
 
+    if not lines or not lines[-1].startswith("FILE_COUNT="):
+        raise ValueError("Missing FILE_COUNT header in package")
+
     file_count = int(lines[-1].split("=", 1)[1])
 
-    for _ in range(file_count):
+    for i in range(file_count):
         # Read JSON line
+        entry_line = None
         while pos < len(package_bytes):
             end = package_bytes.find(b"\n", pos)
             if end == -1:
@@ -81,15 +85,22 @@ def parse_manifest_entries(package_bytes: bytes):
             line = package_bytes[pos:end].decode("utf-8")
             pos = end + 1
             if line.strip():
+                entry_line = line
                 break
 
-        entry = json.loads(line)
+        if entry_line is None:
+            raise ValueError(f"Unexpected end of package: missing manifest entry {i}")
+
+        try:
+            entry = json.loads(entry_line)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid manifest JSON at entry {i}: {e}") from e
 
         # Read content until FILE_END_MARKER
         end_marker = b"PXFERRY_FILE_END\n"
         marker_pos = package_bytes.find(end_marker, pos)
         if marker_pos == -1:
-            raise ValueError("Missing PXFERRY_FILE_END marker")
+            raise ValueError(f"Missing PXFERRY_FILE_END marker for entry {i}")
 
         content_bytes = package_bytes[pos:marker_pos]
         pos = marker_pos + len(end_marker)

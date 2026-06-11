@@ -76,8 +76,12 @@ def resolve_repo(spec: str) -> str:
 
 
 def save_config(cfg: Dict, path: str = None):
-    """Save config to file."""
+    """Save config to file.
+
+    If no path is given, writes to the existing config location (found by
+    searching upward from CWD), or to ~/pixelferry.json if no config exists yet.
+    """
     if path is None:
-        path = DEFAULT_CONFIG_NAME
+        path = _find_config() or os.path.join(os.path.expanduser("~"), DEFAULT_CONFIG_NAME)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(cfg, f, indent=2, ensure_ascii=False)

@@ -13,10 +13,12 @@ def sha256_hex(data: bytes) -> str:
 
 
 def is_text_file(path: str, sample_size: int = 8192) -> bool:
-    """Heuristic: try UTF-8 decode on a chunk; if it fails, treat as binary."""
+    """Heuristic: try UTF-8 decode on a chunk; if it fails or contains null bytes, treat as binary."""
     try:
         with open(path, "rb") as f:
             chunk = f.read(sample_size)
+        if b"\x00" in chunk:
+            return False
         chunk.decode("utf-8")
         return True
     except (UnicodeDecodeError, OSError):

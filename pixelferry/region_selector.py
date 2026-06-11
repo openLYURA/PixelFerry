@@ -255,7 +255,7 @@ class RegionSelector:
         return self.result
 
 
-def select_region(prompt: str = "") -> Optional[Tuple[int, int, int, int]]:
+def select_region() -> Optional[Tuple[int, int, int, int]]:
     """Show a draggable/resizable window for region selection.
 
     Returns:

@@ -52,6 +52,10 @@ def unpack_package(package_bytes: bytes, output_dir: str,
         safe_relpath(rel_path)
 
         abs_path = os.path.join(output_dir, rel_path)
+        real_path = os.path.realpath(abs_path)
+        real_output = os.path.realpath(output_dir)
+        if not real_path.startswith(real_output + os.sep) and real_path != real_output:
+            raise ValueError(f"Path escapes output directory: {rel_path}")
         if os.path.exists(abs_path) and not overwrite:
             raise FileExistsError(f"File exists, use overwrite=True: {rel_path}")
 

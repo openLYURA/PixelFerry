@@ -12,7 +12,7 @@ from .constants import (
     WINDOW_WIDTH, WINDOW_HEIGHT,
     START_MARKER_NIBBLES, END_MARKER_NIBBLES,
     TOTAL_NIBBLES,
-    CORNER_WHITE, CORNER_RED, CORNER_GREEN, CORNER_BLUE,
+    CORNER_YELLOW, CORNER_RED, CORNER_GREEN, CORNER_BLUE,
     MARKER_SIZE,
 )
 from .framing import FrameHeader, parse_frame_header, validate_frame
@@ -102,7 +102,7 @@ def _draw_corner_markers(img: Image.Image):
     w, h = img.size
 
     corners = [
-        (0, 0, CORNER_WHITE),              # top-left: yellow (for preventing boundary sticking)
+        (0, 0, CORNER_YELLOW),              # top-left: yellow (for preventing boundary sticking)
         (w - MARKER_SIZE, 0, CORNER_RED),    # top-right: red
         (0, h - MARKER_SIZE, CORNER_GREEN),  # bottom-left: green
         (w - MARKER_SIZE, h - MARKER_SIZE, CORNER_BLUE),  # bottom-right: blue
@@ -153,7 +153,8 @@ def encode_frame_to_image(frame_bytes: bytes) -> Image.Image:
     for row in range(GRID_ROWS):
         for col in range(GRID_COLS):
             if nibble_idx + 2 >= len(nibbles):
-                break
+                _draw_corner_markers(img)
+                return img
 
             # 3 nibbles per block: R, G, B
             r_n = nibbles[nibble_idx]

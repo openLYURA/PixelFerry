@@ -78,7 +78,7 @@ START_MARKER_NIBBLES = [15, 0, 3, 12, 5, 10, 9, 6, 14, 1, 7, 8]
 END_MARKER_NIBBLES   = [1, 14, 11, 4, 9, 6, 12, 3, 8, 7, 0, 15]
 
 # ── Corner markers ───────────────────────────────────────────────
-CORNER_WHITE = (255, 255, 0)  # 修改为黄色（防范与 20px 白色外框背景粘连）
+CORNER_YELLOW = (255, 255, 0)  # 黄色（防范与 20px 白色外框背景粘连）
 CORNER_RED   = (255, 0,   0)
 CORNER_GREEN = (0,   255, 0)
 CORNER_BLUE  = (0,   0,   255)
