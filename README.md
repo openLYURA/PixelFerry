@@ -1,17 +1,17 @@
 <div align="center">
 
-```
- ██▓███ ▓█████ ██▒   █▓▓█████  ██▀███   ██▓ ██▓     ▒█████
-▓██░  ██▒▓█   ▀▓██░   █▒▓█   ▀ ▓██ ▒ ██▒▓██▒▓██▒    ▒██▒  ██▒
-▓██░ ██▓▒▒███   ▓██  █▒░▒███   ▓██ ░▄█ ▒▒██▒▒██░    ▒██░  ██▒
-▒██▄█▓▒ ▒▒▓█  ▄  ▒██ █░░▒▓█  ▄ ▒██▀▀█▄  ░██░▒██░    ▒██   ██░
-▒██▒ ░  ░░▒████▒  ▒▀█░  ░▒████▒░██▓ ▒██▒░██░░██████▒░ ████▓▒░
-▒▓▒░ ░  ░░░ ▒░ ░  ░ ▐░  ░░ ▒░ ░░ ▒▓ ░▒▓░░▓  ░ ▒░▓  ░░ ▒░▒░▒░
-```
+<img src="https://img.shields.io/badge/%E2%96%87%20PixelFerry-visual%20data%20channel-blueviolet?style=for-the-badge&labelColor=1a1a2e" alt="PixelFerry"/>
+
+<br/>
+
+<table><tr>
+<td><code>#FF0000</code></td>
+<td><code>#00FF00</code></td>
+<td><code>#0000FF</code></td>
+<td><code>#FFFF00</code></td>
+</tr></table>
 
 **Visual data transfer through RGB color blocks**
-
-`#FF0000` `#00FF00` `#0000FF` `#FFFF00`
 
 English | [中文](README_zh.md)
 
@@ -29,38 +29,30 @@ PixelFerry encodes binary data into RGB color blocks displayed on screen. A rece
 Each pixel block's R/G/B channel encodes **4 bits** using 16 discrete color levels:
 
 ```
- ┌──────────────────────────────────────────────────────┐
- │  Level:   0    1    2    3  ···   12   13   14   15  │
- │  Value:   8   24   40   56  ···  200  216  232  248  │
- │                                                      │
- │  3 nibbles/block × 12 bits = 1.5 bytes per block     │
- │  1200×800 window → 46×29 grid → ~9 KB per frame      │
- └──────────────────────────────────────────────────────┘
+Level:    0    1    2    3   ...   12   13   14   15
+Value:    8   24   40   56   ...  200  216  232  248
+
+3 nibbles/block = 12 bits = 1.5 bytes
+1200 x 800 window -> 46 x 29 grid -> ~9 KB per frame
 ```
 
 ## How It Works
 
 ```
-  SENDER                                 RECEIVER
- ┌────────────────────┐                 ┌────────────────────┐
- │  repo directory     │                 │  screen capture     │
- │        │            │                 │        │            │
- │  ┌─────▼─────┐      │                 │  ┌─────▼─────┐      │
- │  │  package   │      │   ┌─────────┐  │  │  locate    │      │
- │  │  (.pxf)    │      │   │ ░░▓▓░░  │  │  │  corners   │      │
- │  └─────┬─────┘      │   │ ▓▓░░▓▓  │  │  └─────┬─────┘      │
- │  ┌─────▼─────┐      │   │ ░░▓▓░░  │  │  ┌─────▼─────┐      │
- │  │  split     │      │   │ ▓▓░░▓▓  │  │  │  decode    │      │
- │  │  frames    │      │   │ ░░▓▓░░  │  │  │  blocks    │      │
- │  └─────┬─────┘      │   └─────────┘  │  └─────┬─────┘      │
- │  ┌─────▼─────┐      │    RGB blocks   │  ┌─────▼─────┐      │
- │  │  display   │──────│──────────────→ │  │  verify    │      │
- │  │  window    │ QR   │   screenshot   │  │  SHA-256   │      │
- │  └───────────┘      │                 │  └─────┬─────┘      │
- │                     │                 │  ┌─────▼─────┐      │
- │                     │                 │  │  unpack    │      │
- │                     │                 │  │  repo      │      │
- └────────────────────┘                 └────────────────────┘
+SENDER                              RECEIVER
+----------                          ---------
+
+ repo dir                              screen capture
+     |                                       |
+ build .pxf                                find corners
+     |                                       |
+ split chunks                             decode blocks
+     |                                       |
+ encode frames                    visual    verify SHA-256
+     |                             channel       |
+ display window  ------>  screenshot      unpack repo
+ (loop playback)                            |
+                                       output data
 ```
 
 1. **Sender** packs a repo into `.pxf`, splits into chunks, encodes each as an RGB frame, displays in a tkinter window
@@ -126,14 +118,17 @@ pixelferry send myproject --fps 5
 Four colored markers in the corners enable automatic perspective correction:
 
 ```
- ┌──────────────────────────────────────────┐
- │ ■■■■■                                 ■■■│  Yellow → Red
- │ ■■■■■                                 ■■■│
- │                                          │
- │                                          │
- │ ■■■■■                                 ■■■│  Green → Blue
- │ ■■■■■                                 ■■■│
- └──────────────────────────────────────────┘
+  Yellow                         Red
+  +-----+--------------------+-----+
+  |#####|                    |#####|
+  +-----+                    +-----+
+  |                             |
+  |         data area           |
+  |                             |
+  +-----+                    +-----+
+  |#####|                    |#####|
+  +-----+--------------------+-----+
+  Green                         Blue
 ```
 
 | Corner | Color | RGB |
@@ -146,11 +141,11 @@ Four colored markers in the corners enable automatic perspective correction:
 ### Frame Header (128 bytes)
 
 ```
- 0                   4   5    7          23         31         35        67        99      128
- ├───────────────────┬───┬────┬──────────┬──────────┬──────────┬─────────┬─────────┬───────┤
- │  magic "PXF1"     │ver│hlen│ session_id (16B)    │frame_idx │total    │payload  │ SHA   │
- │                   │   │    │          │          │          │_len     │_sha256  │ pkg   │
- └───────────────────┴───┴────┴──────────┴──────────┴──────────┴─────────┴─────────┴───────┘
+Offset:  0         4   5   7         23        31        35       67       99    128
+         +---------+---+---+---------+---------+---------+--------+--------+-----+
+         |  PXF1   |v|hln| session_id (16B)    |frm_idx  |total   |payload | pkg |
+         |  magic  |e |   |         |          |         |_len    |_sha256 | sha |
+         +---------+---+---+---------+---------+---------+--------+--------+-----+
 ```
 
 ## Security
